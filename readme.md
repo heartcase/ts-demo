@@ -83,3 +83,24 @@ merge(commonConfig, envConfig);
 > webpack-dev-server doesn't write any output files after compiling.
 > Instead, it keeps bundle files in memory and serves them as if they
 > were real files mounted at the server's root path.
+
+### TypeScript
+
+> TypeScript and ESLint have similar purposes
+> The best way to deal with situations like this is often to disable the relevant ESLint rule and go with the TypeScript Compiler.
+
+```
+module.exports = {
+  parser: "@typescript-eslint/parser",
+  plugins: ["@typescript-eslint"],
+  extends: ["plugin:@typescript-eslint/recommended"]
+};
+```
+
+### Babel
+
+```
+{
+  "presets": ["@babel/preset-env"]
+}
+```
