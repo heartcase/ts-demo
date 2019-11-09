@@ -1,18 +1,5 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import App from "./components/App";
 
-export interface HelloProps {
-  compiler: string;
-  framework: string;
-}
-
-export const Hello = (props: HelloProps) => (
-  <h1>
-    Hello from {props.compiler} and {props.framework}!
-  </h1>
-);
-
-ReactDOM.render(
-  <Hello compiler="TypeScript" framework="React" />,
-  document.querySelector("#app")
-);
+ReactDOM.render(<App appName="My App" />, document.querySelector("#app"));

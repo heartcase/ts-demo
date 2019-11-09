@@ -97,10 +97,47 @@ module.exports = {
 };
 ```
 
+- resolve .ts/tsx extension
+
+```
+{
+    "compilerOptions": {
+        "moduleResolution": "node"
+    }
+}
+```
+
 ### Babel
+
+- Add presets
 
 ```
 {
   "presets": ["@babel/preset-env"]
+}
+```
+
+### Testing
+
+- Add adapter for Enzyme in `jest.setup.js`
+
+```
+import Adapter from "enzyme-adapter-react-16";
+import { configure } from "enzyme";
+
+configure({
+  adapter: new Adapter()
+});
+```
+
+- Add Babel compiler for typescript
+
+```
+{
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-react",
+    "@babel/preset-typescript"
+  ]
 }
 ```
