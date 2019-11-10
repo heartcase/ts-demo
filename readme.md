@@ -141,3 +141,71 @@ configure({
   ]
 }
 ```
+
+### Prettier
+
+- Add config file `.prettierrc.js`
+
+```
+module.exports = {
+    parser: 'typescript',
+};
+```
+
+- Add Webpack loader
+
+```
+{
+    enforce: 'pre',
+    test: /\.[jt]sx?$/,
+    exclude: /node_modules/,
+    use: ['eslint-loader', 'prettier-loader']
+};
+```
+
+### Webpack Optimization
+
+- Extract common dependencies into an existing entry chunk
+
+```
+optimization: {
+  splitChunks: {
+    chunks: 'all',
+  },
+},
+```
+
+- Use hash filename
+
+```
+output: {
+  filename: 'bundle.js',
+  filename: '[name].[contenthash].js',
+  path: path.resolve(__dirname, 'dist'),
+}
+```
+
+- Extracting Boilerplate
+
+```
+optimization: {
+  runtimeChunk: 'single',
+},
+```
+
+- Cache vendor
+
+```
+optimization: {
+  runtimeChunk: 'single',
+    splitChunks: {
+      cacheGroups: {
+      vendor: {
+        test: /[\\/]node_modules[\\/]/,
+        name: 'vendors',
+        chunks: 'all',
+      },
+    },
+  },
+},
+```

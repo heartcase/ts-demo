@@ -1,8 +1,5 @@
-import * as React from "react";
-
-declare interface AppProps {
-  appName: string;
-}
+import * as React from 'react';
+import { AppProps } from './types/';
 
 export const App = (props: AppProps) => {
   const { appName } = props;

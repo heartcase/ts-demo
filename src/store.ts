@@ -1,17 +1,13 @@
-import { Reducer, InjectedStore } from "./types/store";
-import { createStore, applyMiddleware, compose } from "redux";
-import createSagaMiddleware from "redux-saga";
+import { Reducer, InjectedStore, Saga } from './types/store';
+import { createStore, applyMiddleware, compose } from 'redux';
+import createSagaMiddleware from 'redux-saga';
 
 // create store
 
-export const configureStore = (
-  rootReducer: Reducer,
-  preloadedState: any
-): InjectedStore => {
+export const configureStore = (rootReducer: Reducer, preloadedState: any): InjectedStore<Saga, Reducer> => {
   const sagaMiddleware = createSagaMiddleware();
-  const composeEnhancer =
-    (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-  const store: InjectedStore = createStore(
+  const composeEnhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+  const store: InjectedStore<Saga, Reducer> = createStore(
     rootReducer,
     preloadedState,
     composeEnhancer(applyMiddleware(sagaMiddleware))
