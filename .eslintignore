@@ -1,3 +1,4 @@
 # ignore others
 # only check src files
 !/root/src/**
+*.test.js

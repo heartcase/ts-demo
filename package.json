@@ -6,7 +6,7 @@
   "scripts": {
     "start": "webpack-dev-server --open --env.NODE_ENV=development",
     "build": "webpack --env.NODE_ENV=production",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "keywords": [],
   "author": "",
