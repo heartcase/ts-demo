@@ -1,7 +1,6 @@
 import {
   Reducer,
   InjectedStore,
-  Saga,
   Middleware,
   Action,
   StateRecipes,
@@ -31,14 +30,11 @@ export const combinedActionMiddleware: Middleware = store => next => (
 };
 
 // Create Store
-export const configureStore = (
-  rootReducer: Reducer = getIdentity,
-  preloadedState: ReduxState = {}
-): InjectedStore<Saga, Reducer> => {
+export const configureStore = (rootReducer: Reducer = getIdentity, preloadedState: ReduxState = {}): InjectedStore => {
   const sagaMiddleware = createSagaMiddleware();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const composeEnhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-  const store: InjectedStore<Saga, Reducer> = createStore(
+  const store: InjectedStore = createStore(
     rootReducer,
     preloadedState,
     composeEnhancer(applyMiddleware(sagaMiddleware, combinedActionMiddleware))
@@ -100,7 +96,7 @@ export const buildNameSpace = ({
   };
 };
 
-export const injectReducer = (store: InjectedStore<Saga, Reducer>, key: string, reducer: Reducer): void => {
+export const injectReducer = (store: InjectedStore, key: string, reducer: Reducer): void => {
   store.injectedReducers[key] = reducer;
   store.replaceReducer(combineReducers(store.injectedReducers));
 };

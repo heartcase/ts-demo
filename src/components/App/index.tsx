@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { AppProps, FunctionComponent } from './types/';
+import { FunctionComponent } from './types/';
+import { TestView } from '../../views/TestView';
 
-export const App: FunctionComponent<AppProps> = (props: AppProps) => {
-  const { appName } = props;
-  return <h1>{`App name: ${appName}`}</h1>;
+export const App: FunctionComponent = () => {
+  return <TestView />;
 };
 
 export default App;

@@ -1,20 +1,20 @@
-import { Reducer, Store, Middleware, Action, AnyAction, Dispatch } from 'redux';
+import { Reducer, Store, Middleware, Action, AnyAction, Dispatch, ActionCreator } from 'redux';
 import { Saga, Task } from 'redux-saga';
 
-export type InjectedSagas<S extends Saga> = {
-  [key: string]: S;
+export type InjectedSagas = {
+  [key: string]: Saga;
 };
-export type InjectedReducers<R extends Reducer> = {
-  [key: string]: R;
+export type InjectedReducers = {
+  [key: string]: Reducer;
 };
 
-export interface DispatchCombinedAction<A extends Action = AnyAction> {
-  <T extends A>(action: Array<T>): Array<T>;
+export interface DispatchCombinedAction {
+  (action: Array<AnyAction>): Array<AnyAction>;
 }
 
-export type InjectedStore<S extends Saga, R extends Reducer> = Store & {
-  injectedSagas: InjectedSagas<S>;
-  injectedReducers: InjectedReducers<R>;
+export type InjectedStore = Store & {
+  injectedSagas: InjectedSagas;
+  injectedReducers: InjectedReducers;
   runSaga(saga: Saga, ...args: Parameters<Saga>): Task;
   dispatch: Dispatch & DispatchCombinedAction;
 };
@@ -30,8 +30,7 @@ export interface Accessor {
   namespace: string;
 }
 
-export type Selector = (state: StateValue) => StateValue | Array<StateValue>;
-export type ActionCreator = (data: StateValue) => AnyAction;
+export type Selector = (state: StateValue) => StateValue;
 
 export interface StateRecipes {
   key: string;
@@ -44,14 +43,14 @@ export interface StateRecipes {
 
 export interface BundleState {
   key: string;
-  actions: Record<string, ActionCreator>;
+  actions: Record<string, ActionCreator<AnyAction>>;
   reducer: Reducer;
   selectors: Record<string, Selector>;
 }
 
 export interface NameSpace {
   reducer: Reducer;
-  actions: Record<string, Record<string, ActionCreator>>;
+  actions: Record<string, Record<string, ActionCreator<AnyAction>>>;
   selectors: Record<string, Record<string, Selector>>;
 }
 
