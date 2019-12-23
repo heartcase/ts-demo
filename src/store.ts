@@ -89,10 +89,12 @@ export const buildNameSpace = ({
   const reducer = combineReducers(Object.assign({}, ...states.map(state => ({ [state.key]: state.reducer }))));
   const actions = Object.assign({}, ...states.map(state => ({ [state.key]: state.actions })));
   const selectors = Object.assign({}, ...states.map(state => ({ [state.key]: state.selectors })));
+  const resetNamespace = states.map(state => state.actions.reset());
   return {
     reducer,
     actions,
-    selectors
+    selectors,
+    resetNamespace
   };
 };
 

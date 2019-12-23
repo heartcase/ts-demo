@@ -52,6 +52,7 @@ export interface NameSpace {
   reducer: Reducer;
   actions: Record<string, Record<string, ActionCreator<AnyAction>>>;
   selectors: Record<string, Record<string, Selector>>;
+  resetNamespace?: Array<AnyAction>;
 }
 
 export { Reducer, Saga, Store, Middleware, Action, AnyAction };
