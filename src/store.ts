@@ -8,12 +8,15 @@ import {
   AnyAction,
   BundleState,
   ReduxState,
-  NameSpace
+  NameSpace,
+  Accessor,
+  ActionCreator
 } from './types/store';
 import { createStore, applyMiddleware, compose, combineReducers } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import { Dispatch } from 'react';
 import { get } from 'lodash';
+import { sagas as rootSagas } from './sagas';
 
 // Helpers
 export const getEmptyObject = (): {} => ({});
@@ -42,6 +45,7 @@ export const configureStore = (rootReducer: Reducer = getIdentity, preloadedStat
   store.injectedReducers = {};
   store.injectedSagas = {};
   store.runSaga = sagaMiddleware.run;
+  store.runSaga(rootSagas);
   return store;
 };
 
@@ -101,4 +105,21 @@ export const buildNameSpace = ({
 export const injectReducer = (store: InjectedStore, key: string, reducer: Reducer): void => {
   store.injectedReducers[key] = reducer;
   store.replaceReducer(combineReducers(store.injectedReducers));
+};
+
+export const requestAction = (
+  { namespace, key }: Accessor,
+  actions: (accessor: Accessor, actions?: Function) => Record<string, ActionCreator<AnyAction>>
+): Record<string, ActionCreator<AnyAction>> => {
+  const accessor = namespace ? `${namespace}.${key}` : key;
+  return {
+    request: (request: object, callbackAction: AnyAction, errorAction: AnyAction): AnyAction => ({
+      type: `__request__`,
+      request,
+      callbackAction,
+      errorAction,
+      accessor
+    }),
+    ...(actions || getEmptyObject)({ namespace, key })
+  };
 };

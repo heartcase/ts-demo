@@ -1,15 +1,17 @@
 import * as React from 'react';
-import { buildNameSpace } from '../../store';
+import { buildNameSpace, requestAction } from '../../store';
 import { StateRecipes, AnyAction } from '../../types/store';
 import { useRedux } from '../../hooks';
 
-// Build Namespace Data
+// Namespace States Declaration
 const namespace = 'test';
 const recipes: Array<StateRecipes> = [
   { key: 'firstName', initialValue: 'John' },
-  { key: 'lastName', initialValue: 'Doe' }
+  { key: 'lastName', initialValue: 'Doe' },
+  { key: 'fullName', initialValue: 'John Doe', actions: requestAction }
 ];
 
+// Build Namespace Data
 const namespaceData = buildNameSpace({ namespace, recipes });
 const { reducer, actions, selectors, resetNamespace } = namespaceData;
 
@@ -36,6 +38,7 @@ export const Component: React.FunctionComponent = () => {
       <div>Personal Info</div>
       {/* Example of using selector */}
       <div>{`${select('firstName')} ${select('lastName')}`}</div>
+      <div>{`${select('fullName')}`}</div>
 
       {/* Example of dispatch simple single action */}
       <button
@@ -44,6 +47,17 @@ export const Component: React.FunctionComponent = () => {
         }}
       >
         Set to Jimmy
+      </button>
+
+      <button
+        onClick={(): void => {
+          dispatch('fullName', 'request', {
+            method: 'get',
+            url: '/user/12345/fullname'
+          });
+        }}
+      >
+        Fetch Full Name
       </button>
 
       {/* Example of dispatch action sequence  */}

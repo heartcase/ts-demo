@@ -36,7 +36,7 @@ export interface StateRecipes {
   key: string;
   initialValue: StateValue;
   namespace?: string;
-  actions?: (accessor: Accessor) => Record<string, Action>;
+  actions?: (accessor: Accessor, actions?: Function) => Record<string, ActionCreator<AnyAction>>;
   reducer?: (state: StateValue, accessor: Accessor) => StateValue;
   selectors?: (accessor: Accessor) => Record<string, Selector>;
 }
@@ -55,4 +55,4 @@ export interface NameSpace {
   resetNamespace?: Array<AnyAction>;
 }
 
-export { Reducer, Saga, Store, Middleware, Action, AnyAction };
+export { Reducer, Saga, Store, Middleware, Action, AnyAction, ActionCreator };
