@@ -1,44 +1,55 @@
-import { Reducer, Store, Middleware, Action, AnyAction, Dispatch, ActionCreator } from 'redux';
+import { Store, Middleware, Dispatch, AnyAction, ActionCreator, Reducer } from 'redux';
 import { Saga, Task } from 'redux-saga';
 
-export type InjectedSagas = {
-  [key: string]: Saga;
-};
-export type InjectedReducers = {
-  [key: string]: Reducer;
-};
+// Action
+export { AnyAction, ActionCreator };
 
-export interface DispatchCombinedAction {
-  (action: Array<AnyAction>): Array<AnyAction>;
+// Reducer
+export { Reducer };
+
+// Saga
+export { Saga };
+
+// State
+declare interface RootState {
+  [namespace: string]: StateValue;
 }
-
-export type InjectedStore = Store & {
-  injectedSagas: InjectedSagas;
-  injectedReducers: InjectedReducers;
-  runSaga(saga: Saga, ...args: Parameters<Saga>): Task;
-  dispatch: Dispatch & DispatchCombinedAction;
-};
-
-export interface ReduxState {
-  [key: string]: StateValue;
-}
-
-export type StateValue = number | boolean | string | null | undefined | ReduxState;
-
-export interface Accessor {
+declare type StateValue = number | boolean | string | null | undefined | object | Array<StateValue>;
+declare interface StatePath {
   key: string;
   namespace: string;
 }
 
-export type Selector = (state: StateValue) => StateValue;
+export { RootState, StateValue, StatePath };
 
+// Selector
+declare type Selector = (state: StateValue) => StateValue;
+
+export { Selector };
+
+// Store
+declare interface DispatchCombinedAction {
+  (action: Array<AnyAction>): Array<AnyAction>;
+}
+
+declare type EnhancedStore = Store & {
+  injectedSagas: Record<string, Saga>;
+  injectedReducers: Record<string, Reducer>;
+  runSaga(saga: Saga, ...args: Parameters<Saga>): Task;
+  dispatch: Dispatch & DispatchCombinedAction;
+};
+
+export { EnhancedStore, DispatchCombinedAction, Middleware };
+
+// State Configs
 export interface StateRecipes {
   key: string;
   initialValue: StateValue;
   namespace?: string;
-  actions?: (accessor: Accessor, actions?: Function) => Record<string, ActionCreator<AnyAction>>;
-  reducer?: (state: StateValue, accessor: Accessor) => StateValue;
-  selectors?: (accessor: Accessor) => Record<string, Selector>;
+  actions?: Function;
+  reducer?: Function;
+  selectors?: Function;
+  otherProps?: StateValue;
 }
 
 export interface BundleState {
@@ -54,5 +65,3 @@ export interface NameSpace {
   selectors: Record<string, Record<string, Selector>>;
   resetNamespace?: Array<AnyAction>;
 }
-
-export { Reducer, Saga, Store, Middleware, Action, AnyAction, ActionCreator };

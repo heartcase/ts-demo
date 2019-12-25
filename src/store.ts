@@ -1,15 +1,14 @@
 import {
   Reducer,
-  InjectedStore,
+  EnhancedStore,
   Middleware,
-  Action,
   StateRecipes,
   StateValue,
   AnyAction,
   BundleState,
-  ReduxState,
+  RootState,
   NameSpace,
-  Accessor,
+  StatePath,
   ActionCreator
 } from './types/store';
 import { createStore, applyMiddleware, compose, combineReducers } from 'redux';
@@ -25,7 +24,7 @@ export const getIdentity = (state: StateValue): StateValue => state;
 // Redux Middlewares
 export const combinedActionMiddleware: Middleware = store => next => (
   action
-): Dispatch<Action> | Array<Dispatch<Action>> => {
+): Dispatch<AnyAction> | Array<Dispatch<AnyAction>> => {
   if (!Array.isArray(action)) {
     return next(action);
   }
@@ -33,11 +32,11 @@ export const combinedActionMiddleware: Middleware = store => next => (
 };
 
 // Create Store
-export const configureStore = (rootReducer: Reducer = getIdentity, preloadedState: ReduxState = {}): InjectedStore => {
+export const configureStore = (rootReducer: Reducer = getIdentity, preloadedState: RootState = {}): EnhancedStore => {
   const sagaMiddleware = createSagaMiddleware();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const composeEnhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-  const store: InjectedStore = createStore(
+  const store: EnhancedStore = createStore(
     rootReducer,
     preloadedState,
     composeEnhancer(applyMiddleware(sagaMiddleware, combinedActionMiddleware))
@@ -55,7 +54,8 @@ export const createState = ({
   namespace = '',
   actions = getEmptyObject,
   reducer = getIdentity,
-  selectors = getEmptyObject
+  selectors = getEmptyObject,
+  otherProps
 }: StateRecipes): BundleState => {
   const accessor = namespace ? `${namespace}.${key}` : key;
   return {
@@ -77,7 +77,7 @@ export const createState = ({
     },
     selectors: {
       get: (state: StateValue): StateValue => get(state, accessor),
-      ...selectors({ namespace, key })
+      ...selectors({ namespace, key }, otherProps)
     }
   };
 };
@@ -102,24 +102,26 @@ export const buildNameSpace = ({
   };
 };
 
-export const injectReducer = (store: InjectedStore, key: string, reducer: Reducer): void => {
+export const injectReducer = (store: EnhancedStore, key: string, reducer: Reducer): void => {
   store.injectedReducers[key] = reducer;
   store.replaceReducer(combineReducers(store.injectedReducers));
 };
 
+const defaultOtherProps = {};
+
 export const requestAction = (
-  { namespace, key }: Accessor,
-  actions: (accessor: Accessor, actions?: Function) => Record<string, ActionCreator<AnyAction>>
+  { namespace, key }: StatePath,
+  otherProps: { request?: object } = defaultOtherProps
 ): Record<string, ActionCreator<AnyAction>> => {
   const accessor = namespace ? `${namespace}.${key}` : key;
+  const { request: defaultRequest } = otherProps;
   return {
     request: (request: object, callbackAction: AnyAction, errorAction: AnyAction): AnyAction => ({
       type: `__request__`,
-      request,
+      request: Object.assign({}, defaultRequest, request),
       callbackAction,
       errorAction,
       accessor
-    }),
-    ...(actions || getEmptyObject)({ namespace, key })
+    })
   };
 };

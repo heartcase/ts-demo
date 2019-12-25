@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useStore, useSelector, useDispatch } from 'react-redux';
 import { injectReducer } from './store';
-import { InjectedStore, Reducer, StateValue, Selector, NameSpace, AnyAction } from './types/store';
+import { EnhancedStore, Reducer, StateValue, Selector, NameSpace, AnyAction } from './types/store';
 
 export const useInjectReducer = (key: string, reducer: Reducer): void => {
-  const store = useStore() as InjectedStore;
+  const store = useStore() as EnhancedStore;
   useEffect(() => {
     injectReducer(store, key, reducer);
   }, [key]);

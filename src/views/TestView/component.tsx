@@ -8,7 +8,14 @@ const namespace = 'test';
 const recipes: Array<StateRecipes> = [
   { key: 'firstName', initialValue: 'John' },
   { key: 'lastName', initialValue: 'Doe' },
-  { key: 'fullName', initialValue: 'John Doe', actions: requestAction }
+  {
+    key: 'fullName',
+    initialValue: 'John Doe',
+    actions: requestAction,
+    otherProps: {
+      request: { method: 'get', url: 'api/user/12345/fullname' }
+    }
+  }
 ];
 
 // Build Namespace Data
@@ -53,7 +60,7 @@ export const Component: React.FunctionComponent = () => {
         onClick={(): void => {
           dispatch('fullName', 'request', {
             method: 'get',
-            url: '/user/12345/fullname'
+            url: 'api/user/12345/fullname'
           });
         }}
       >
