@@ -16,13 +16,12 @@ export const useAdvancedSelector = (selectors: Record<string, Record<string, Sel
 
 export const useRedux = (
   namespace: string,
-  { reducer, actions, selectors }: NameSpace
+  { actions, selectors }: NameSpace
 ): { dispatch: Function; select: Function; dispatchActions: Function } => {
-  useInjectReducer(namespace, reducer);
   const _dispatch = useDispatch();
-  const dispatch = (key: string, action: string, ...args: Array<StateValue>): AnyAction =>
+  const dispatch = (key: string, action: string, ...args: Array<StateValue>): Function => (): AnyAction =>
     _dispatch(actions[key][action](...args));
-  const dispatchActions = (actions: Array<AnyAction>): Array<AnyAction> => _dispatch(actions);
+  const dispatchActions = (actions: Array<AnyAction>): Function => (): Array<AnyAction> => _dispatch(actions);
   const select = useAdvancedSelector(selectors);
   return {
     dispatch,

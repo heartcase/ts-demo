@@ -63,7 +63,7 @@ export const createState = ({
     actions: {
       set: (x: StateValue): AnyAction => ({ type: `${accessor}.set`, value: x }),
       reset: (): AnyAction => ({ type: `${accessor}.reset` }),
-      ...actions({ namespace, key })
+      ...actions({ namespace, key }, otherProps)
     },
     reducer: (state = initialValue, action: AnyAction): StateValue => {
       switch (action.type) {
@@ -72,7 +72,7 @@ export const createState = ({
         case `${accessor}.reset`:
           return initialValue;
         default:
-          return reducer(state, { namespace, key });
+          return reducer(state, { namespace, key }, otherProps);
       }
     },
     selectors: {
@@ -116,12 +116,18 @@ export const requestAction = (
   const accessor = namespace ? `${namespace}.${key}` : key;
   const { request: defaultRequest } = otherProps;
   return {
-    request: (request: object, callbackAction: AnyAction, errorAction: AnyAction): AnyAction => ({
+    request: (
+      request: object,
+      preRequestAction: AnyAction,
+      callbackAction: AnyAction,
+      errorAction: AnyAction
+    ): AnyAction => ({
       type: `__request__`,
       request: Object.assign({}, defaultRequest, request),
       callbackAction,
       errorAction,
-      accessor
+      accessor,
+      preRequestAction
     })
   };
 };
