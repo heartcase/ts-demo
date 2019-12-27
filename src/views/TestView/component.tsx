@@ -32,7 +32,7 @@ const setName = (firstName: string, lastName: string): Array<AnyAction> => [
 export const Component: React.FunctionComponent = () => {
   // Local Hooks
   useInjectReducer(namespace, reducer);
-  const { dispatch, select, dispatchActions } = useRedux(namespace, namespaceData);
+  const { dispatch, select, dispatchActions } = useRedux(namespaceData);
   // Possible to access another namespace by importing their namespace accessor
   // import { accessor } from 'some/other/views'
   // const {
