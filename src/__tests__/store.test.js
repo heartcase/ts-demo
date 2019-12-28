@@ -1,3 +1,6 @@
+jest.mock('redux-saga');
+import reduxSagas from 'redux-saga';
+
 import {
   configureStore,
   combinedActionMiddleware,
@@ -5,8 +8,13 @@ import {
   getIdentity,
   buildNameSpace,
   createState,
-  injectReducer
+  injectReducer,
+  requestAction
 } from '../store';
+
+const mockMiddleware = store => next => action => next(action);
+mockMiddleware.run = () => {};
+reduxSagas.mockImplementation(() => mockMiddleware);
 
 describe('Test Store', () => {
   test('should call window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__', () => {
@@ -107,5 +115,15 @@ describe('Test Store', () => {
     expect(store.injectedReducers).toEqual({ personalData: reducer });
     store.dispatch({ type: 'firstName.set', value: 'Jimmy' });
     expect(store.getState().personalData.firstName).toEqual('Jimmy');
+  });
+
+  test('test requestAction', () => {
+    const { request } = requestAction({ namespace: 'personalData', key: 'firstName' });
+    expect(request().type).toEqual('__request__');
+  });
+
+  test('test requestAction (without namespace)', () => {
+    const { request } = requestAction({ key: 'firstName' });
+    expect(request().type).toEqual('__request__');
   });
 });
