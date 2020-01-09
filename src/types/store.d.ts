@@ -37,6 +37,7 @@ declare type EnhancedStore = Store & {
   injectedReducers: Record<string, Reducer>;
   runSaga(saga: Saga, ...args: Parameters<Saga>): Task;
   dispatch: Dispatch & DispatchCombinedAction;
+  currentReducer: Reducer;
 };
 
 export { EnhancedStore, DispatchCombinedAction, Middleware };
@@ -63,5 +64,5 @@ export interface NameSpace {
   reducer: Reducer;
   actions: Record<string, Record<string, ActionCreator<AnyAction>>>;
   selectors: Record<string, Record<string, Selector>>;
-  resetNamespace?: Array<AnyAction>;
+  resetNamespace?: AnyAction;
 }

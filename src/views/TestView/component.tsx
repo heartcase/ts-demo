@@ -13,22 +13,29 @@ const recipes: Array<StateRecipes> = [
     initialValue: 'John Doe',
     actions: requestAction,
     otherProps: {
-      request: { method: 'get', url: 'api/user/12345/fullname' }
+      request: { method: 'get', url: 'api/user/12345/fullname' } // default axios request config
     }
   }
 ];
+
+// Push the limits, every state took about 461B in memory
+for (let i = 0; i < 100000; i++) {
+  recipes.push({ key: `personId${i}`, initialValue: `The ${i}` });
+}
 
 // Build Namespace Data
 const namespaceData = buildNameSpace({ namespace, recipes });
 const { reducer, actions, resetNamespace } = namespaceData;
 
 // Build Action Sequence
-const setName = (firstName: string, lastName: string): Array<AnyAction> => [
-  actions.firstName.set(firstName),
-  actions.lastName.set(lastName)
-];
+const setName = (firstName: string, lastName: string): Array<AnyAction> => {
+  const actionArray = [actions.firstName.set(firstName), actions.lastName.set(lastName)];
+  actionArray.toString = (): string => `setName(${firstName}, ${lastName})`;
+  return actionArray;
+};
 
 // The View Component
+// A Combination of Container and Layout
 export const Component: React.FunctionComponent = () => {
   // Local Hooks
   useInjectReducer(namespace, reducer);
@@ -50,6 +57,7 @@ export const Component: React.FunctionComponent = () => {
       {/* Example of dispatch simple single action */}
       <button onClick={dispatch('firstName', 'set', 'Jimmy')}>Set to Jimmy</button>
 
+      {/* Example of dispatch a request */}
       <button
         onClick={dispatch(
           'fullName',

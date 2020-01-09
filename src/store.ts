@@ -22,13 +22,15 @@ export const getEmptyObject = (): {} => ({});
 export const getIdentity = (state: StateValue): StateValue => state;
 
 // Redux Middlewares
-export const combinedActionMiddleware: Middleware = store => next => (
+export const combinedActionMiddleware: Middleware = () => next => (
   action
 ): Dispatch<AnyAction> | Array<Dispatch<AnyAction>> => {
   if (!Array.isArray(action)) {
     return next(action);
   }
-  return action.map(item => store.dispatch(item));
+  next({ type: `${action.toString()} ❗` });
+  action.map(item => next(item));
+  next({ type: `${action.toString()} ✅` });
 };
 
 // Create Store
@@ -45,6 +47,7 @@ export const configureStore = (rootReducer: Reducer = getIdentity, preloadedStat
   store.injectedSagas = {};
   store.runSaga = sagaMiddleware.run;
   store.runSaga(rootSagas);
+  store.currentReducer = rootReducer;
   return store;
 };
 
@@ -90,10 +93,13 @@ export const buildNameSpace = ({
   namespace: string;
 }): NameSpace => {
   const states = recipes.map((recipe: StateRecipes) => createState({ ...recipe, namespace }));
-  const reducer = combineReducers(Object.assign({}, ...states.map(state => ({ [state.key]: state.reducer }))));
+  const stateReducer = combineReducers(Object.assign({}, ...states.map(state => ({ [state.key]: state.reducer }))));
+  const initialState = Object.assign({}, ...recipes.map(state => ({ [state.key]: state.initialValue })));
+  const reducer = (state = initialState, action: AnyAction): StateValue =>
+    action.type === `${namespace}.__reset__` ? initialState : stateReducer(state, action);
   const actions = Object.assign({}, ...states.map(state => ({ [state.key]: state.actions })));
   const selectors = Object.assign({}, ...states.map(state => ({ [state.key]: state.selectors })));
-  const resetNamespace = states.map(state => state.actions.reset());
+  const resetNamespace = { type: `${namespace}.__reset__` };
   return {
     reducer,
     actions,
@@ -104,7 +110,8 @@ export const buildNameSpace = ({
 
 export const injectReducer = (store: EnhancedStore, key: string, reducer: Reducer): void => {
   store.injectedReducers[key] = reducer;
-  store.replaceReducer(combineReducers(store.injectedReducers));
+  store.currentReducer = combineReducers(store.injectedReducers);
+  store.replaceReducer(store.currentReducer);
 };
 
 const defaultOtherProps = {};
