@@ -1,42 +1,109 @@
-import {
-  Reducer,
-  EnhancedStore,
-  Middleware,
-  StateRecipes,
-  StateValue,
-  AnyAction,
-  BundleState,
-  RootState,
-  NameSpace,
-  StatePath,
-  ActionCreator
-} from './types/store';
-import { createStore, applyMiddleware, compose, combineReducers } from 'redux';
-import createSagaMiddleware from 'redux-saga';
-import { Dispatch } from 'react';
-import { get } from 'lodash';
-import { sagas as rootSagas } from './sagas';
+import { Middleware } from 'redux';
 
-// Helpers
-export const getEmptyObject = (): {} => ({});
-export const getIdentity = (state: StateValue): StateValue => state;
+import {
+  CollectObjectCreators,
+  CollectReducerCreators,
+  StateRecipe,
+  Reducer,
+  ReducerCreator,
+  Action,
+  StateBundle,
+  ConfigureStore,
+  EnhancedStore,
+  NamespaceBundle,
+  GetActionCreators,
+  RequestActionProps
+} from './types/store';
+
+import createSagaMiddleware from 'redux-saga';
+import { createStore, applyMiddleware, compose, combineReducers } from 'redux';
+import { get } from 'lodash';
+
+// Unit Functions
+export const emptyObjectCreator = () => ({});
+export const identityReducer: Reducer = state => state;
+export const identityReducerCreator: ReducerCreator = () => identityReducer;
+
+// Composing Function Helpers
+export const collectObjectCreator: CollectObjectCreators = (...objectCreators) => (...args) =>
+  Object.assign({}, ...objectCreators.map(creator => creator(...args)));
+
+export const collectReducerCreator: CollectReducerCreators = (...reducerCreators) => (
+  fallbackReducer,
+  statePath,
+  otherProps
+) =>
+  reducerCreators.reduce((reducer, reducerCreator) => reducerCreator(reducer, statePath, otherProps), fallbackReducer);
+
+// Tool Functions
+export const getStatePath = (key: string, namespace: string): string => `${namespace}.${key}`;
 
 // Redux Middlewares
-export const combinedActionMiddleware: Middleware = () => next => (
-  action
-): Dispatch<AnyAction> | Array<Dispatch<AnyAction>> => {
+export const combinedActionMiddleware: Middleware = () => next => action => {
   if (!Array.isArray(action)) {
     return next(action);
   }
   next({ type: `${action.toString()} ❗` });
   action.map(item => next(item));
-  next({ type: `${action.toString()} ✅` });
+  return next({ type: `${action.toString()} ✅` });
+};
+
+// Create StateBundle from StateRecipe
+export const createStateBundle = <T = any, K = any>({
+  key,
+  namespace,
+  initialValue,
+  reducerCreator = identityReducerCreator,
+  getActionCreators = emptyObjectCreator,
+  getSelector = emptyObjectCreator,
+  otherProps
+}: StateRecipe<T, K>): StateBundle<T> => {
+  const statePath = getStatePath(key, namespace);
+  return {
+    key,
+    actions: {
+      set: (value: T) => ({ type: `${statePath}.set`, value }),
+      reset: () => ({ type: `${statePath}.reset` }),
+      ...getActionCreators(statePath, otherProps)
+    },
+    reducer: (state: T = initialValue, action: Action) => {
+      switch (action.type) {
+        case `${statePath}.set`:
+          return action.value;
+        case `${statePath}.reset`:
+          return initialValue;
+        default:
+          return reducerCreator(identityReducer, statePath, otherProps)(state, action);
+      }
+    },
+    selectors: {
+      get: (state: T) => get(state, statePath),
+      ...getSelector(statePath, otherProps)
+    }
+  };
+};
+
+// Build Up NamespaceBundle from StateRecipes
+export const buildNamespaceBundle = (recipes: StateRecipe[], namespace: string): NamespaceBundle => {
+  const states = recipes.map(recipe => createStateBundle({ ...recipe, namespace }));
+  const stateReducer = combineReducers(Object.assign({}, ...states.map(state => ({ [state.key]: state.reducer }))));
+  const initialState = Object.assign({}, ...recipes.map(state => ({ [state.key]: state.initialValue })));
+  const reducer: Reducer = (state = initialState, action) =>
+    action.type === `${namespace}.__reset__` ? initialState : stateReducer(state, action);
+  const actions = Object.assign({}, ...states.map(state => ({ [state.key]: state.actions })));
+  const selectors = Object.assign({}, ...states.map(state => ({ [state.key]: state.selectors })));
+  const resetAction = { type: `${namespace}.__reset__` };
+  return {
+    reducer,
+    actions,
+    selectors,
+    resetAction
+  };
 };
 
 // Create Store
-export const configureStore = (rootReducer: Reducer = getIdentity, preloadedState: RootState = {}): EnhancedStore => {
+export const configureStore: ConfigureStore = (rootReducer, rootSagas, preloadedState) => {
   const sagaMiddleware = createSagaMiddleware();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const composeEnhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   const store: EnhancedStore = createStore(
     rootReducer,
@@ -46,95 +113,48 @@ export const configureStore = (rootReducer: Reducer = getIdentity, preloadedStat
   store.injectedReducers = {};
   store.injectedSagas = {};
   store.runSaga = sagaMiddleware.run;
-  store.runSaga(rootSagas);
   store.currentReducer = rootReducer;
+  store.runSaga(rootSagas);
   return store;
 };
 
-export const createState = ({
-  key,
-  initialValue,
-  namespace = '',
-  actions = getEmptyObject,
-  reducer = getIdentity,
-  selectors = getEmptyObject,
-  otherProps
-}: StateRecipes): BundleState => {
-  const accessor = namespace ? `${namespace}.${key}` : key;
-  return {
-    key,
-    actions: {
-      set: (x: StateValue): AnyAction => ({ type: `${accessor}.set`, value: x }),
-      reset: (): AnyAction => ({ type: `${accessor}.reset` }),
-      ...actions({ namespace, key }, otherProps)
-    },
-    reducer: (state = initialValue, action: AnyAction): StateValue => {
-      switch (action.type) {
-        case `${accessor}.set`:
-          return action.value;
-        case `${accessor}.reset`:
-          return initialValue;
-        default:
-          return reducer(state, { namespace, key }, otherProps);
-      }
-    },
-    selectors: {
-      get: (state: StateValue): StateValue => get(state, accessor),
-      ...selectors({ namespace, key }, otherProps)
-    }
-  };
-};
-
-export const buildNameSpace = ({
-  recipes,
-  namespace = ''
-}: {
-  recipes: Array<StateRecipes>;
-  namespace: string;
-}): NameSpace => {
-  const states = recipes.map((recipe: StateRecipes) => createState({ ...recipe, namespace }));
-  const stateReducer = combineReducers(Object.assign({}, ...states.map(state => ({ [state.key]: state.reducer }))));
-  const initialState = Object.assign({}, ...recipes.map(state => ({ [state.key]: state.initialValue })));
-  const reducer = (state = initialState, action: AnyAction): StateValue =>
-    action.type === `${namespace}.__reset__` ? initialState : stateReducer(state, action);
-  const actions = Object.assign({}, ...states.map(state => ({ [state.key]: state.actions })));
-  const selectors = Object.assign({}, ...states.map(state => ({ [state.key]: state.selectors })));
-  const resetNamespace = { type: `${namespace}.__reset__` };
-  return {
-    reducer,
-    actions,
-    selectors,
-    resetNamespace
-  };
-};
-
-export const injectReducer = (store: EnhancedStore, key: string, reducer: Reducer): void => {
-  store.injectedReducers[key] = reducer;
+// Inject Reducer
+export const injectReducer = (store: EnhancedStore, namespace: string, reducer: Reducer): void => {
+  store.injectedReducers[namespace] = reducer;
   store.currentReducer = combineReducers(store.injectedReducers);
   store.replaceReducer(store.currentReducer);
 };
 
-const defaultOtherProps = {};
-
-export const requestAction = (
-  { namespace, key }: StatePath,
-  otherProps: { request?: object } = defaultOtherProps
-): Record<string, ActionCreator<AnyAction>> => {
-  const accessor = namespace ? `${namespace}.${key}` : key;
+// Extendable ActionCreator
+export const requestActionCreator: GetActionCreators<RequestActionProps> = (statePath, otherProps) => {
   const { request: defaultRequest } = otherProps;
   return {
-    request: (
-      request: object,
-      preRequestAction: AnyAction,
-      callbackAction: AnyAction,
-      errorAction: AnyAction
-    ): AnyAction => ({
+    request: (request: object, preRequestAction: Action, callbackAction: Action, errorAction: Action) => ({
       type: `__request__`,
       request: Object.assign({}, defaultRequest, request),
       callbackAction,
       errorAction,
-      accessor,
+      statePath,
       preRequestAction
     })
   };
+};
+
+export const arrayActionCreator: GetActionCreators = statePath => {
+  return {
+    pop: () => ({ type: `${statePath}.pop` }),
+    shift: () => ({ type: `${statePath}.shift` })
+  };
+};
+
+// Extendable ReducerCreator
+export const arrayReducerCreator: ReducerCreator<any[]> = (fallbackReducer, statePath) => (state, action) => {
+  switch (action.type) {
+    case `${statePath}.pop`:
+      return state.slice(0, state.length - 1);
+    case `${statePath}.shift`:
+      return state.slice(1);
+    default:
+      return fallbackReducer(state, action);
+  }
 };

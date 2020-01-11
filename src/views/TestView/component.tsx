@@ -1,21 +1,22 @@
 import * as React from 'react';
-import { buildNameSpace, requestAction } from '../../store';
-import { StateRecipes, AnyAction } from '../../types/store';
+import { buildNamespaceBundle, collectObjectCreator, requestActionCreator } from '../../store';
 import { useRedux, useInjectReducer } from '../../hooks';
+import { StateRecipe } from '../../types/store';
 
 // Namespace States Declaration
 const namespace = 'test';
-const recipes: Array<StateRecipes> = [
+const recipes: Array<StateRecipe> = [
   { key: 'firstName', initialValue: 'John' },
   { key: 'lastName', initialValue: 'Doe' },
   {
     key: 'fullName',
     initialValue: 'John Doe',
-    actions: requestAction,
+    getActionCreators: requestActionCreator,
     otherProps: {
       request: { method: 'get', url: 'api/user/12345/fullname' } // default axios request config
     }
-  }
+  },
+  { key: 'sampleList', initialValue: [] }
 ];
 
 // Push the limits, every state took about 461B in memory
@@ -24,11 +25,11 @@ for (let i = 0; i < 100000; i++) {
 }
 
 // Build Namespace Data
-const namespaceData = buildNameSpace({ namespace, recipes });
-const { reducer, actions, resetNamespace } = namespaceData;
+const namespaceData = buildNamespaceBundle(recipes, namespace);
+const { reducer, actions, resetAction } = namespaceData;
 
 // Build Action Sequence
-const setName = (firstName: string, lastName: string): Array<AnyAction> => {
+const setName = (firstName: string, lastName: string) => {
   const actionArray = [actions.firstName.set(firstName), actions.lastName.set(lastName)];
   actionArray.toString = (): string => `setName(${firstName}, ${lastName})`;
   return actionArray;
@@ -46,7 +47,7 @@ export const Component: React.FunctionComponent = () => {
   //   dispatch: otherDispatch,
   //   select: otherSelect,
   //   dispatchActions: otherDispatchActions
-  // } = useRedux(accessor.namespace, accessor.namespaceData);
+  // } = useRedux({accessor.namespaceData});
   return (
     <>
       <div>Personal Info</div>
@@ -79,7 +80,7 @@ export const Component: React.FunctionComponent = () => {
       <button onClick={dispatchActions(setName('Jimmy', 'Green'))}>Set both names</button>
 
       {/* Example of dispatch default cleanup actions */}
-      <button onClick={dispatchActions(resetNamespace)}>Reset</button>
+      <button onClick={dispatchActions(resetAction)}>Reset</button>
     </>
   );
 };

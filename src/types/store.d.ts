@@ -1,68 +1,69 @@
-import { Store, Middleware, Dispatch, AnyAction, ActionCreator, Reducer } from 'redux';
+import { Store, Dispatch } from 'redux';
 import { Saga, Task } from 'redux-saga';
 
-// Action
-export { AnyAction, ActionCreator };
+export type Action = {
+  type: string;
+  [payload: string]: any;
+};
+export type Selector<T = any> = (state: T) => any;
+export type Reducer<T = any> = (state: T, action: Action) => T;
 
-// Reducer
-export { Reducer };
+export type ObjectCreator<T = any> = (...args: Parameters<any>) => T;
+export type ActionCreator = ObjectCreator<Action>;
+export type ReducerCreator<T = any> = (fallbackReducer: Reducer<T>, statePath: string, otherProps?: any) => Reducer<T>;
 
-// Saga
-export { Saga };
+export type CollectObjectCreators<T = any> = (...objectCreators: ObjectCreator<T>[]) => ObjectCreator<T>;
+export type CollectReducerCreators<T = any> = (...reducerCreators: ReducerCreator<T>[]) => ReducerCreator<T>;
 
-// State
-declare interface RootState {
-  [namespace: string]: StateValue;
-}
-declare type StateValue = number | boolean | string | null | undefined | object | Array<StateValue>;
-declare interface StatePath {
-  key: string;
-  namespace: string;
-}
+export type ConfigureStore = (rootReducer: Reducer, rootSagas: Saga, preloadedState: any) => EnhancedStore;
 
-export { RootState, StateValue, StatePath };
-
-// Selector
-declare type Selector = (state: StateValue) => StateValue;
-
-export { Selector };
-
-// Store
-declare interface DispatchCombinedAction {
-  (action: Array<AnyAction>): Array<AnyAction>;
+export interface DispatchCombinedAction<A extends Action = Action> {
+  (action: A[]): A[];
 }
 
-declare type EnhancedStore = Store & {
-  injectedSagas: Record<string, Saga>;
-  injectedReducers: Record<string, Reducer>;
+export type EnhancedStore = Store & {
+  injectedSagas: {
+    [namespace: string]: Saga;
+  };
+  injectedReducers: {
+    [namespace: string]: Reducer;
+  };
   runSaga(saga: Saga, ...args: Parameters<Saga>): Task;
   dispatch: Dispatch & DispatchCombinedAction;
   currentReducer: Reducer;
 };
 
-export { EnhancedStore, DispatchCombinedAction, Middleware };
+export type GetActionCreators<K = any> = (statePath: string, otherProps: K) => { [type: string]: ActionCreator };
+export type GetSelector<T = any, K = any> = (statePath: string, otherProps: K) => { [type: string]: Selector<T> };
 
-// State Configs
-export interface StateRecipes {
+export type StateRecipe<T = any, K = any> = {
   key: string;
-  initialValue: StateValue;
   namespace?: string;
-  actions?: Function;
-  reducer?: Function;
-  selectors?: Function;
-  otherProps?: StateValue;
-}
+  initialValue: T;
+  reducerCreator?: ReducerCreator<T>;
+  getActionCreators?: GetActionCreators<K>;
+  getSelector?: GetSelector<T, K>;
+  otherProps?: K;
+};
 
-export interface BundleState {
+export type StateBundle<T = any> = {
   key: string;
-  actions: Record<string, ActionCreator<AnyAction>>;
-  reducer: Reducer;
-  selectors: Record<string, Selector>;
-}
+  reducer: Reducer<T>;
+  actions: { [type: string]: ActionCreator };
+  selectors: { [type: string]: Selector<T> };
+};
 
-export interface NameSpace {
-  reducer: Reducer;
-  actions: Record<string, Record<string, ActionCreator<AnyAction>>>;
-  selectors: Record<string, Record<string, Selector>>;
-  resetNamespace?: AnyAction;
-}
+export type ReduxPath<T = any> = {
+  [key: string]: {
+    [type: string]: T;
+  };
+};
+
+export type NamespaceBundle<T = any> = {
+  reducer: Reducer<T>;
+  actions: ReduxPath<ActionCreator>;
+  selectors: ReduxPath<Selector<T>>;
+  resetAction?: Action;
+};
+
+export type RequestActionProps = { request?: object };
