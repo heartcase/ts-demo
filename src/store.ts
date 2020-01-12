@@ -126,7 +126,7 @@ export const injectReducer = (store: EnhancedStore, namespace: string, reducer: 
 };
 
 export const injectSaga = (store: EnhancedStore, namespace: string, task: Task, id: string, mode = 'takeEvery') => {
-  const sagas = get(store, ['injectedSagas', namespace], []);
+  const sagas = get(store, ['injectedSagas', namespace], []).filter(bundle => bundle.task.isRunning());
   const taskBundle = {
     task,
     id,

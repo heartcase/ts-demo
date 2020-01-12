@@ -5,11 +5,13 @@ import { injectReducer, injectSaga } from './store';
 import { EnhancedStore, Reducer, Selector, ActionCreator, ReduxPath, Action } from './types/store';
 import { request } from './sagas';
 
-export const useInjectReducer = (key: string, reducer: Reducer) => {
+export const useInjectReducer = (namespace: string, reducer: Reducer) => {
   const store = useStore() as EnhancedStore;
   useEffect(() => {
-    injectReducer(store, key, reducer);
-  }, [key]);
+    if (!store.injectedReducers[namespace]) {
+      injectReducer(store, namespace, reducer);
+    }
+  }, [namespace]);
 };
 
 export const useAdvancedSelector = (selectors: ReduxPath<Selector>) => {

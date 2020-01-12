@@ -99,3 +99,5 @@ export const accessor = {
   namespace,
   namespaceData
 };
+
+export default Component;
