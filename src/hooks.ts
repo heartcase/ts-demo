@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useStore, useSelector, useDispatch } from 'react-redux';
-import { injectReducer } from './store';
+
+import { injectReducer, injectSaga } from './store';
 import { EnhancedStore, Reducer, Selector, ActionCreator, ReduxPath, Action } from './types/store';
+import { request } from './sagas';
 
 export const useInjectReducer = (key: string, reducer: Reducer) => {
   const store = useStore() as EnhancedStore;
@@ -17,7 +19,15 @@ export const useAdvancedSelector = (selectors: ReduxPath<Selector>) => {
 // Dispatch Functions are wrapped by empty arrow function for used as event handler
 export const useAdvancedDispatch = (actions: ReduxPath<ActionCreator>) => {
   const dispatch = useDispatch();
-  return (key: string, type: string, ...args: any[]) => () => dispatch(actions[key][type](...args));
+  const store = useStore() as EnhancedStore;
+  return (key: string, type: string, ...args: any[]) => () => {
+    const action = actions[key][type](...args);
+    if (action.type === '__request__') {
+      const task = store.runSaga(request, action);
+      injectSaga(store, action.statePath.split('.')[0], task, action.statePath, action.mode);
+    }
+    return dispatch(action);
+  };
 };
 
 export const useDispatchActions = () => {

@@ -1,10 +1,13 @@
-import { takeEvery, call, put } from 'redux-saga/effects';
+import { call, put, cancelled } from 'redux-saga/effects';
 import axios from 'axios';
 
 import { Action } from './types/store';
 
-function* request(action: Action): Generator<Action, void, unknown> {
-  const { request, callbackAction, errorAction, accessor, preRequestAction } = action;
+export function* request(action: Action) {
+  let cancel = new Function();
+  const CancelToken = axios.CancelToken;
+  const { request, callbackAction, errorAction, accessor, preRequestAction, cancelAction } = action;
+  request.cancelToken = new CancelToken(c => (cancel = c));
   try {
     yield preRequestAction && put(preRequestAction);
     const response = yield call(() => axios(request));
@@ -15,9 +18,10 @@ function* request(action: Action): Generator<Action, void, unknown> {
     yield put({ type: `${accessor}.set`, value });
   } catch (error) {
     yield errorAction && put(errorAction(error));
+  } finally {
+    if (yield cancelled()) {
+      yield put(cancelAction());
+      cancel();
+    }
   }
-}
-
-export function* sagas(): Generator<any, void, unknown> {
-  yield takeEvery('__request__', request);
 }

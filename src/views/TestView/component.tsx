@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { buildNamespaceBundle, collectObjectCreator, requestActionCreator } from '../../store';
 import { useRedux, useInjectReducer } from '../../hooks';
-import { StateRecipe } from '../../types/store';
+import { StateRecipe, EnhancedStore } from '../../types/store';
+import { useStore } from 'react-redux';
 
 // Namespace States Declaration
 const namespace = 'test';
@@ -11,9 +12,10 @@ const recipes: Array<StateRecipe> = [
   {
     key: 'fullName',
     initialValue: 'John Doe',
-    getActionCreators: requestActionCreator,
+    getActionCreators: collectObjectCreator(requestActionCreator),
     otherProps: {
-      request: { method: 'get', url: 'api/user/12345/fullname' } // default axios request config
+      request: { method: 'get', url: 'api/user/12345/fullname' }, // default axios request config
+      mode: 'takeLast' // asynchronous action mode
     }
   },
   { key: 'sampleList', initialValue: [] }
@@ -41,6 +43,7 @@ export const Component: React.FunctionComponent = () => {
   // Local Hooks
   useInjectReducer(namespace, reducer);
   const { dispatch, select, dispatchActions } = useRedux(namespaceData);
+  const store = useStore() as EnhancedStore;
   // Possible to access another namespace by importing their namespace accessor
   // import { accessor } from 'some/other/views'
   // const {
@@ -70,7 +73,8 @@ export const Component: React.FunctionComponent = () => {
           }, // axios request config
           actions.fullName.set('Loading'), // preRequest Action
           actions.firstName.set, // Success Callback
-          actions.fullName.set // Failure Callback
+          actions.fullName.set, // Failure Callback,
+          () => actions.fullName.set('Canceled') // Failure Callback
         )}
       >
         Fetch Full Name
@@ -81,6 +85,11 @@ export const Component: React.FunctionComponent = () => {
 
       {/* Example of dispatch default cleanup actions */}
       <button onClick={dispatchActions(resetAction)}>Reset</button>
+
+      {/* Example of cancel request */}
+      <button onClick={() => store.injectedSagas[namespace].forEach(bundle => bundle.task.cancel())}>
+        Cancel Task
+      </button>
     </>
   );
 };

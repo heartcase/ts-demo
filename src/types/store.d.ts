@@ -15,7 +15,7 @@ export type ReducerCreator<T = any> = (fallbackReducer: Reducer<T>, statePath: s
 export type CollectObjectCreators<T = any> = (...objectCreators: ObjectCreator<T>[]) => ObjectCreator<T>;
 export type CollectReducerCreators<T = any> = (...reducerCreators: ReducerCreator<T>[]) => ReducerCreator<T>;
 
-export type ConfigureStore = (rootReducer: Reducer, rootSagas: Saga, preloadedState: any) => EnhancedStore;
+export type ConfigureStore = (rootReducer: Reducer, preloadedState: any) => EnhancedStore;
 
 export interface DispatchCombinedAction<A extends Action = Action> {
   (action: A[]): A[];
@@ -23,7 +23,12 @@ export interface DispatchCombinedAction<A extends Action = Action> {
 
 export type EnhancedStore = Store & {
   injectedSagas: {
-    [namespace: string]: Saga;
+    [namespace: string]: {
+      id: string;
+      mode: string;
+      task: Task;
+      [otherProps: string]: any;
+    }[];
   };
   injectedReducers: {
     [namespace: string]: Reducer;
@@ -66,4 +71,8 @@ export type NamespaceBundle<T = any> = {
   resetAction?: Action;
 };
 
-export type RequestActionProps = { request?: object };
+export type AsynchronousActionProps = {
+  mode?: string;
+};
+
+export type RequestActionProps = AsynchronousActionProps & { request?: object };

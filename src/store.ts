@@ -1,3 +1,4 @@
+import { Task } from 'redux-saga';
 import { Middleware } from 'redux';
 
 import {
@@ -102,7 +103,7 @@ export const buildNamespaceBundle = (recipes: StateRecipe[], namespace: string):
 };
 
 // Create Store
-export const configureStore: ConfigureStore = (rootReducer, rootSagas, preloadedState) => {
+export const configureStore: ConfigureStore = (rootReducer, preloadedState) => {
   const sagaMiddleware = createSagaMiddleware();
   const composeEnhancer = (window as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   const store: EnhancedStore = createStore(
@@ -114,28 +115,65 @@ export const configureStore: ConfigureStore = (rootReducer, rootSagas, preloaded
   store.injectedSagas = {};
   store.runSaga = sagaMiddleware.run;
   store.currentReducer = rootReducer;
-  store.runSaga(rootSagas);
   return store;
 };
 
 // Inject Reducer
-export const injectReducer = (store: EnhancedStore, namespace: string, reducer: Reducer): void => {
+export const injectReducer = (store: EnhancedStore, namespace: string, reducer: Reducer) => {
   store.injectedReducers[namespace] = reducer;
   store.currentReducer = combineReducers(store.injectedReducers);
   store.replaceReducer(store.currentReducer);
 };
 
+export const injectSaga = (store: EnhancedStore, namespace: string, task: Task, id: string, mode = 'takeEvery') => {
+  const sagas = get(store, ['injectedSagas', namespace], []);
+  const taskBundle = {
+    task,
+    id,
+    mode
+  };
+  switch (mode) {
+    case 'takeEvery': {
+      store.injectedSagas[namespace] = [...sagas, taskBundle];
+      return;
+    }
+    case 'takeFirst': {
+      const hadTask = sagas.find(bundle => bundle.id === id);
+      if (hadTask) return;
+      store.injectedSagas[namespace] = [...sagas, taskBundle];
+      return;
+    }
+    case 'takeLast': {
+      const hadTasks = sagas.filter(bundle => bundle.id === id);
+      if (hadTasks) hadTasks.forEach(bundle => bundle.task.cancel());
+      const newSagas = sagas.filter(bundle => bundle.id !== id);
+      store.injectedSagas[namespace] = [...newSagas, taskBundle];
+      return;
+    }
+    default:
+      return;
+  }
+};
+
 // Extendable ActionCreator
 export const requestActionCreator: GetActionCreators<RequestActionProps> = (statePath, otherProps) => {
-  const { request: defaultRequest } = otherProps;
+  const { request: defaultRequest, mode } = otherProps;
   return {
-    request: (request: object, preRequestAction: Action, callbackAction: Action, errorAction: Action) => ({
+    request: (
+      request: object,
+      preRequestAction: Action,
+      callbackAction: Action,
+      errorAction: Action,
+      cancelAction: Action
+    ) => ({
       type: `__request__`,
       request: Object.assign({}, defaultRequest, request),
       callbackAction,
       errorAction,
+      cancelAction,
       statePath,
-      preRequestAction
+      preRequestAction,
+      mode
     })
   };
 };
