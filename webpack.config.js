@@ -1,15 +1,15 @@
-const merge = require("webpack-merge");
-const path = require("path");
+const merge = require('webpack-merge');
+const path = require('path');
 
 // Disambiguate configs between different environments
 const getEnvConfig = env => {
   switch (env) {
-    case "production":
-      return require("./configs/webpage.prod.config");
-    case "development":
-      return require("./configs/webpage.dev.config");
+    case 'production':
+      return require('./configs/webpage.prod.config');
+    case 'development':
+      return require('./configs/webpage.dev.config');
     default:
-      return require("./configs/webpage.prod.config");
+      return require('./configs/webpage.prod.config');
   }
 };
 
@@ -19,11 +19,11 @@ const commonConfig = {
   // that is not the starting point of execution.
   // Use optimization.splitChunks
   entry: {
-    main: "./src/"
+    main: './src/'
   },
   // Attempt to resolve these extensions in order.
   resolve: {
-    extensions: [".tsx", ".ts", ".jsx", ".js"]
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.d.ts']
   }
 };
 

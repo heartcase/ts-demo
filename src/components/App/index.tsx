@@ -10,7 +10,6 @@ export const App: FunctionComponent = () => {
   const path: string = get(match, 'path', '');
   const params: object = get(match, 'params', {});
   const Component: React.ComponentType<any> = get(router, path, null);
-  console.log(Component);
   return (
     <>
       <nav>
