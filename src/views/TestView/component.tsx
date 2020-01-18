@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { get } from 'lodash';
 
 import { StateRecipe, Action } from '../../store/types';
 import { createNamespaceBundle } from '../../store/recipe';
@@ -8,6 +7,7 @@ import {
   useAdvancedSelector,
   useInjectState
 } from '../../hooks';
+import { createActionCreatorGetter } from '../../store/utils';
 
 // Namespace States Declaration
 const namespace = 'test';
@@ -25,6 +25,7 @@ const recipes: Array<StateRecipe> = [
       }
     }
   },
+  { path: 'a', initialValue: {} },
   { path: 'a.sampleList', initialValue: [] },
   { path: 'a.sampleList2', initialValue: [] }
 ];
@@ -32,14 +33,15 @@ const recipes: Array<StateRecipe> = [
 // Build Namespace Data
 const namespaceData = createNamespaceBundle(namespace, recipes);
 const { actions, preloadedState } = namespaceData;
+const getActionCreator = createActionCreatorGetter(actions);
 
 // Build Event
 const setBothName = (firstName: string, lastName: string): Action => {
   return {
     type: `${namespace}@setFullName`,
     actions: [
-      get(actions, ['firstName', '@set'], null)(firstName),
-      get(actions, ['lastName', '@set'], null)(lastName)
+      getActionCreator('firstName', 'set')(firstName),
+      getActionCreator('lastName', 'set')(lastName)
     ]
   };
 };
@@ -70,9 +72,9 @@ export const Component: React.FunctionComponent = () => {
             'request',
             {},
             {
-              successAction: get(actions, ['fullName', '@set'], null)(),
-              errorAction: get(actions, ['fullName', '@set'], null)(),
-              cancelAction: get(actions, ['fullName', '@set'], null)()
+              successAction: getActionCreator('firstName', 'set')(),
+              errorAction: getActionCreator('firstName', 'set')(),
+              cancelAction: getActionCreator('firstName', 'set')()
             }
           )}
         >
@@ -86,7 +88,8 @@ export const Component: React.FunctionComponent = () => {
 // Export external accessor for other namespace
 export const accessor = {
   namespace,
-  namespaceData
+  namespaceData,
+  getActionCreator
 };
 
 export default Component;

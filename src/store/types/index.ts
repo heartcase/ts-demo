@@ -33,6 +33,16 @@ export type RequestActionPayload = {
   };
 };
 
+export type TimeoutActionPayload = {
+  timeout: number;
+  callbacks?: {
+    onStartAction?: Action;
+    timeoutAction?: Action;
+    errorAction?: Action;
+    cancelAction?: Action;
+  };
+};
+
 export type RequestResponse = { data: any };
 
 // Store

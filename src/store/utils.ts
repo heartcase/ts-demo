@@ -1,6 +1,7 @@
-import { dropRight, last } from 'lodash';
+import { dropRight, last, get } from 'lodash';
 
-import { CreateState } from './types';
+import { CreateState, NestedActionCreatorMap, ActionCreator } from './types';
+import { safeCall } from '../utils';
 
 export const createState: CreateState = (path, value) =>
   path.length > 0
@@ -8,3 +9,9 @@ export const createState: CreateState = (path, value) =>
         [last(path)]: value
       })
     : value;
+
+export const createActionCreatorGetter = (actions: NestedActionCreatorMap) => (
+  localPath: string,
+  method: string
+): ActionCreator => (...args: any) =>
+  safeCall(get(actions, [localPath, `@${method}`], null), ...args);

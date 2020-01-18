@@ -33,7 +33,7 @@ export const dummyReducer: Reducer = (state, action) => {
   // handle simple actions
   const { path, method } = loadType(type);
   if (method) {
-    const newState = createState(path, method(state, action));
+    const newState = createState(path[0].split('.'), method(state, action));
     return merge({}, state, newState);
   }
   return state;

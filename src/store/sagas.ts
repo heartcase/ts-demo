@@ -1,9 +1,14 @@
 import { Canceler } from 'axios';
 import { merge } from 'lodash';
-import { put, cancelled } from 'redux-saga/effects';
+import { put, cancelled, delay } from 'redux-saga/effects';
 import axios from 'axios';
 
-import { Action, RequestActionPayload, RequestResponse } from './types';
+import {
+  Action,
+  RequestActionPayload,
+  RequestResponse,
+  TimeoutActionPayload
+} from './types';
 import { Maybe } from '../types';
 import { safeCall } from '../utils';
 
@@ -30,6 +35,27 @@ export function* request(action: Action<RequestActionPayload>) {
   } finally {
     if (yield cancelled()) {
       safeCall(cancel);
+      yield put(cancelAction);
+    }
+  }
+}
+
+// handle delay
+// handle data fetching
+export function* delayBy(action: Action<TimeoutActionPayload>) {
+  const {
+    timeout,
+    callbacks: { onStartAction, errorAction, cancelAction, timeoutAction }
+  } = action.payload;
+
+  try {
+    yield put(onStartAction);
+    yield delay(timeout);
+    yield put(timeoutAction);
+  } catch (error) {
+    yield put(merge({}, errorAction, { payload: error }));
+  } finally {
+    if (yield cancelled()) {
       yield put(cancelAction);
     }
   }
